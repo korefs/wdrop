@@ -1,7 +1,17 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 
-Console.WriteLine(File.ReadAllText("logo.txt"));
+Console.WriteLine(@"
+ _    _     _                 
+| |  | |   | |                
+| |  | | __| |_ __ ___  _ __  
+| |/\| |/ _` | '__/ _ \| '_ \ 
+\  /\  / (_| | | | (_) | |_) |
+ \/  \/ \__,_|_|  \___/| .__/ 
+                       | |    
+                       |_|     v0.1
+         🔗  Wdrop - LAN File Sharing
+");
 
 if (args.Length == 0)
 {
