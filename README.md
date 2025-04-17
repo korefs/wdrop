@@ -9,11 +9,11 @@ A lightweight and fast terminal to **share files on the local network** with jus
 1. Compile the project:
 * MacOS
 ```bash
-dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o ./out
+dotnet publish -c Release -r osx-x64 --self-contained true -p:PublishSingleFile=true -o ./out
 ```
 * Windows
 ```bash
-dotnet publish -c Release -r osx-x64 --self-contained true -p:PublishSingleFile=true -o ./out
+dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o ./out
 ```
 
 2. Run
