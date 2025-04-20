@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Net.Sockets;
+using System.Text.Json;
 using Sharprompt;
 using Wdrop;
 
@@ -20,7 +21,7 @@ bool isDirectory = false;
 
 var config = Config.LoadConfig();
 
-if (args[0] == "--defaultupload")
+if (args.Length != 0 && args[0] == "--defaultupload")
 {
     // todo: implement default upload
 
@@ -79,6 +80,48 @@ if (!File.Exists(pathToShare))
 }
 
 string fileName = Path.GetFileName(pathToShare);
+
+string[] uploadOptions = ["local", "0x0.st"];
+
+if (!uploadOptions.Contains(config["uploadto"]))
+{
+    Console.WriteLine($"❌ Invalid upload destination '{config["uploadto"]}'. Using 'local' instead.");
+    Config.SetConfig("uploadto", "local");
+}
+
+if (config["uploadto"] == "0x0.st")
+{
+    // max size for 0x0.st is 512mb
+    if (new FileInfo(pathToShare).Length > 512 * 1024 * 1024)
+    {
+        Console.WriteLine("❌ File is too large for 0x0.st. Please use another provider instead.");
+        return;
+    }
+
+    Console.WriteLine("☁️ Uploading to 0x0.st...");
+
+    using var client = new HttpClient();
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("WdropUploader/1.0");
+    using var multipart = new MultipartFormDataContent();
+    using var stream = File.OpenRead(pathToShare);
+    multipart.Add(new StreamContent(stream), "file", fileName);
+
+    var response = await client.PostAsync("https://0x0.st", multipart);
+    string result = await response.Content.ReadAsStringAsync();
+
+    if (response.IsSuccessStatusCode)
+    {
+        Console.WriteLine($"✅ File sent successfully!");
+        Console.WriteLine($"🔗 Link: {result.Trim()}");
+    }
+    else
+    {
+        Console.WriteLine("❌ Failed to upload file.");
+        Console.WriteLine(result);
+    }
+    return;
+}
+
 string localIp = GetLocalIPAddress();
 int port = GetAvailablePort();
 string url = $"http://{localIp}:{port}/{fileName}";
