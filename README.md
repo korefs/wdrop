@@ -45,7 +45,7 @@ wdrop myFolder
 # If no argument is provided, an interactive menu will appear:
 wdrop
 
-# Set default wdrop external upload provider see [providers](providers.txt)
+# Set default wdrop external upload provider (see below)
 wdrop --defaultupload <provierName>
 ```
 [Click to see available providers](providers.txt)
@@ -88,7 +88,7 @@ install-win.bat
 dotnet publish -c Release -r osx-x64 --self-contained true -p:PublishSingleFile=true -o ./out
 ```
 
-Replace `osx-x64` with your target runtime identifier.
+Replace `osx-x64` with your [target runtime identifier](https://learn.microsoft.com/pt-br/dotnet/core/rid-catalog).
 
 ---
 
