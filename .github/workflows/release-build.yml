@@ -3,7 +3,7 @@ name: Build and Release
 on:
   push:
     tags:
-      - 'v*'  # Ex: v1.0.0
+      - 'v*'
 
 jobs:
   build:
@@ -19,24 +19,24 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: '8.x'
 
       - name: Restore dependencies
         run: dotnet restore
 
       - name: Build project
-        run: dotnet publish -c Release -r ${{ matrix.os == 'macos-latest' && 'osx-x64' || 'win-x64' }} --self-contained true -o ./publish
+        run: dotnet publish -c Release -r ${{ matrix.os == 'macos-latest' && 'osx-x64' || 'win-x64' }} --self-contained true -o ./publish/wdrop-${{ matrix.os }}
 
       - name: Zip artifact
         run: |
-          cd publish
+          cd artifacts
           zip -r wdrop-${{ matrix.os }}.zip wdrop-${{ matrix.os }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: wdrop-${{ matrix.os }}.zip
-          path: ./publish/
+          name: wdrop-${{ matrix.os }}
+          path: ./publish/wdrop-${{ matrix.os }}.zip
 
   release:
     needs: build
@@ -51,15 +51,14 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          path: ./publish
+          path: publish
 
       - name: Display structure
         run: ls -R publish
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
-          files: |
-            publish/*.zip
+          files: publish/**/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
