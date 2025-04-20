@@ -63,11 +63,11 @@ Open the link on another device in the same network to download the file.
 
 ## 📥 Installation
 
-### macOS
+### macOS/linux
 
 ```bash
-chmod +x install-macos.sh
-./install-macos.sh
+chmod +x install.sh
+./install.sh
 ```
 
 ### Windows
@@ -75,7 +75,7 @@ chmod +x install-macos.sh
 Double-click or run from PowerShell:
 
 ```powershell
-install-win.bat
+install.bat
 ```
 
 
