@@ -29,6 +29,8 @@ A lightweight and fast terminal to **share files or entire folders** with a sing
 
 - 🧪 Cross-platform (Windows, macOS, Linux)
 
+- 🗃 Upload to 0x0.st (host file server)
+
 ---
 
 ## 🚀 Usage
@@ -91,7 +93,6 @@ Replace `osx-x64` with your target runtime identifier.
 - [ ] Support for multiple file selection
 - [ ] HTML listing of available files (server mode)
 - [ ] QR Code generation for easy mobile access
-- [ ] Add upload possibility to 0x0.st
 - [ ] Drag-and-drop GUI version
 - [ ] Receive mode (accept files)
 - [ ] Create a client to support P2P connection
