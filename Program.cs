@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Net.Sockets;
+using Sharprompt;
 
 Console.WriteLine(@"
  _    _     _                 
@@ -9,25 +10,57 @@ Console.WriteLine(@"
 \  /\  / (_| | | | (_) | |_) |
  \/  \/ \__,_|_|  \___/| .__/ 
                        | |    
-                       |_|     v0.1
+                       |_|     v0.2
          🔗  Wdrop - LAN File Sharing
 ");
 
+string? pathToShare;
+bool isDirectory = false;
+
 if (args.Length == 0)
 {
-    Console.WriteLine("Usage: wdrop <file-path>");
-    return;
+    Console.WriteLine("📂 No file was passed as an argument. Selecting via menu...");
+
+    string[] items = [.. Directory.GetFiles(Directory.GetCurrentDirectory())];
+
+    if (items.Length == 0)
+    {
+        Console.WriteLine("❌ No files found in current folder.");
+        return;
+    }
+
+    string[] directories = Directory.GetDirectories(Directory.GetCurrentDirectory());
+
+    items = [.. items, .. directories];
+
+    string selectedFile = Prompt.Select("Choose a file or folder to share", [.. items.Select(Path.GetFileName)]);
+
+    pathToShare = Path.Combine(Directory.GetCurrentDirectory(), selectedFile);
+    isDirectory = Directory.Exists(pathToShare);
 }
-
-string filePath = args[0];
-
-if (!File.Exists(filePath))
+else
 {
-    Console.WriteLine($"File not found. \n{filePath}");
+    pathToShare = args[0];
+    isDirectory = Directory.Exists(pathToShare);
+}
+
+
+if (isDirectory)
+{
+    Console.WriteLine("Creating .zip from folder...");
+    string zipPath = Path.Combine(Path.GetTempPath(), Path.GetFileName(pathToShare) + ".zip");
+    if (File.Exists(zipPath)) File.Delete(zipPath);
+    System.IO.Compression.ZipFile.CreateFromDirectory(pathToShare, zipPath);
+    pathToShare = zipPath;
+}
+
+if (!File.Exists(pathToShare))
+{
+    Console.WriteLine($"File not found. \n{pathToShare}");
     return;
 }
 
-string fileName = Path.GetFileName(filePath);
+string fileName = Path.GetFileName(pathToShare);
 string localIp = GetLocalIPAddress();
 int port = GetAvailablePort();
 string url = $"http://{localIp}:{port}/{fileName}";
@@ -50,7 +83,7 @@ while (true)
         var response = context.Response;
         response.ContentType = "application/octet-stream";
         response.AddHeader("Content-Disposition", $"attachment; filename={fileName}");
-        byte[] buffer = File.ReadAllBytes(filePath);
+        byte[] buffer = File.ReadAllBytes(pathToShare);
         response.ContentLength64 = buffer.Length;
         response.OutputStream.Write(buffer, 0, buffer.Length);
         response.OutputStream.Close();
