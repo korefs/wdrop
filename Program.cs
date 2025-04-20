@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 using Sharprompt;
+using Wdrop;
 
 Console.WriteLine(@"
  _    _     _                 
@@ -16,6 +17,23 @@ Console.WriteLine(@"
 
 string? pathToShare;
 bool isDirectory = false;
+
+var config = Config.LoadConfig();
+
+if (args[0] == "--defaultupload")
+{
+    // todo: implement default upload
+
+    if (args.Length < 2)
+    {
+        Console.WriteLine($"Current Default upload destination is '{config["uploadto"]}'");
+        return;
+    }
+
+    Config.SetConfig("uploadto", args[1]);
+    Console.WriteLine($"✅ Default upload destination set to '{args[1]}'");
+    return;
+}
 
 if (args.Length == 0)
 {
