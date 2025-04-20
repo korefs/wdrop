@@ -29,7 +29,7 @@ jobs:
 
       - name: Zip artifact
         run: |
-          cd artifacts
+          cd publish
           zip -r wdrop-${{ matrix.os }}.zip wdrop-${{ matrix.os }}
 
       - name: Upload artifact
