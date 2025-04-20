@@ -27,15 +27,22 @@ jobs:
       - name: Build project
         run: dotnet publish -c Release -r ${{ matrix.os == 'macos-latest' && 'osx-x64' || 'win-x64' }} --self-contained true -o ./publish
 
+      - name: Zip artifact
+        run: |
+          cd publish
+          zip -r wdrop-${{ matrix.os }}.zip wdrop-${{ matrix.os }}
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: wdrop-${{ matrix.os }}
+          name: wdrop-${{ matrix.os }}.zip
           path: ./publish/
 
   release:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout code
@@ -44,19 +51,15 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          path: ./artifacts
+          path: ./publish
 
-      - name: Zip artifacts
-        run: |
-          cd artifacts
-          for dir in */ ; do
-            zip -r "../${dir%/}.zip" "$dir"
-          done
+      - name: Display structure
+        run: ls -R publish
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            artifacts/*.zip
+            publish/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
