@@ -4,9 +4,12 @@ DEST="/usr/local/bin/wdrop"
 
 WDROP_DIR="./out/wdrop"
 
+OS=$(uname)
+RID=$(dotnet --info | grep -i rid | awk '{print $2}')
+
 if [ ! -f $WDROP_DIR ]; then
     echo "❌ Arquivo 'wdrop' não encontrado no diretório atual."
-    echo "Compile com: dotnet publish -c Release -r osx-x64 --self-contained true -p:PublishSingleFile=true -o ./out"
+    echo "Compile com: dotnet publish -c Release -r $RID --self-contained true -p:PublishSingleFile=true -o ./out"
     exit 1
 fi
 
