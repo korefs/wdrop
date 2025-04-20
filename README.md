@@ -1,55 +1,91 @@
 # 📦 wdrop
 
-A lightweight and fast terminal to **share files on the local network** with just one command.
+A lightweight and fast terminal to **share files or entire folders** over your local network with a single command.
+
+![Wdrop ASCII Art](logo.txt)
 
 ---
 
-## How to use
+## ✅ Features
 
-1. Compile the project:
-* MacOS
+- ⚡ Simple CLI interface
+
+- 🌐 Automatic detection of your local IP
+
+- 🔗 Instant HTTP link to download the file
+
+- 📂 Interactive file/folder picker if no argument is provided
+
+- 🗂️ Folder support via auto-zipping
+
+- 🧪 Cross-platform (Windows, macOS, Linux)
+
+---
+
+## 🚀 Usage
+
+```bash
+# Share a file directly
+wdrop myFile.zip
+
+# Share a folder (it will be zipped automatically)
+wdrop myFolder
+
+# If no argument is provided, an interactive menu will appear:
+wdrop
+```
+
+Once started, you'll see an output like:
+
+```
+Sharing 'project.zip' at: http://192.168.x.y:z/project.zip
+Waiting for connection... Press Ctrl+C to stop.
+```
+
+Open the link on another device in the same network to download the file.
+
+---
+
+## 📥 Installation
+
+### macOS
+
+```bash
+chmod +x install-macos.sh
+./install-macos.sh
+```
+
+### Windows
+
+Double-click or run from PowerShell:
+
+```powershell
+install-win.bat
+```
+
+
+## 🛠️ Building from source
+
+### Requirements
+.NET 8 SDK
+
 ```bash
 dotnet publish -c Release -r osx-x64 --self-contained true -p:PublishSingleFile=true -o ./out
 ```
-* Windows
-```bash
-dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o ./out
-```
 
-2. Run
-```bash
-wdrop file.zip
-```
+Replace `osx-x64` with your target runtime identifier.
 
-## Requirements
-.NET 8 SDK
+---
 
-## ✅ Current features
+## 🔮 TODO
 
-Share any file over local HTTP
-
-Interactive file selection in the terminal
-
-Zero external dependencies to download
-
-Standalone binary support (PublishSingleFile)
-
-## 🛠️ In development / Future features
-
-📂 Folder support (with automatic zip before serving)
-
-📄 Multiple file support
-
-🧾 HTML listing of available files (server mode)
-
-🔐 Security token or automatic expiration
-
-📱 QR Code generation with the link to facilitate downloading on mobile
-
-🌍 Create a client to support P2P connection
-
-🌍 External network support via tunneling (e.g. ngrok, Cloudflare Tunnel)
-
-🎨 More stylish TUI interface ("server" mode with live control)
-
-🛑 Self-destruct mode after download
+- [ ] Support for multiple file selection
+- [ ] HTML listing of available files (server mode)
+- [ ] QR Code generation for easy mobile access
+- [ ] Drag-and-drop GUI version
+- [ ] Receive mode (accept files)
+- [ ] Create a client to support P2P connection
+- [ ] Encryption and password protection
+- [ ] Direct folder serving without zipping (advanced)
+- [ ] External network support via tunneling (e.g. ngrok, Cloudflare Tunnel)
+- [ ] Self-destruct mode after download
