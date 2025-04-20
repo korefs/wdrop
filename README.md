@@ -2,7 +2,16 @@
 
 A lightweight and fast terminal to **share files or entire folders** over your local network with a single command.
 
-![Wdrop ASCII Art](logo.txt)
+```bash
+ _    _     _                 
+| |  | |   | |                
+| |  | | __| |_ __ ___  _ __  
+| |/\| |/ _` | '__/ _ \| '_ \ 
+\  /\  / (_| | | | (_) | |_) |
+ \/  \/ \__,_|_|  \___/| .__/ 
+                       | |    
+                       |_|
+```
 
 ---
 
