@@ -1,6 +1,6 @@
 # 📦 wdrop
 
-A lightweight and fast terminal to **share files or entire folders** over your local network with a single command.
+A lightweight and fast terminal to **share files or entire folders** with a single command.
 
 ```bash
  _    _     _                 
