@@ -1,6 +1,6 @@
 # 📦 wdrop
 
-A lightweight and fast terminal to **share files or entire folders** over your local network with a single command.
+A lightweight and fast terminal to **share files or entire folders** with a single command.
 
 ```bash
  _    _     _                 
@@ -29,6 +29,8 @@ A lightweight and fast terminal to **share files or entire folders** over your l
 
 - 🧪 Cross-platform (Windows, macOS, Linux)
 
+- 🗃 Upload to 0x0.st (host file server)
+
 ---
 
 ## 🚀 Usage
@@ -42,7 +44,11 @@ wdrop myFolder
 
 # If no argument is provided, an interactive menu will appear:
 wdrop
+
+# Set default wdrop external upload provider see [providers](providers.txt)
+wdrop --defaultupload <provierName>
 ```
+[Click to see available providers](providers.txt)
 
 Once started, you'll see an output like:
 
@@ -91,7 +97,6 @@ Replace `osx-x64` with your target runtime identifier.
 - [ ] Support for multiple file selection
 - [ ] HTML listing of available files (server mode)
 - [ ] QR Code generation for easy mobile access
-- [ ] Add upload possibility to 0x0.st
 - [ ] Drag-and-drop GUI version
 - [ ] Receive mode (accept files)
 - [ ] Create a client to support P2P connection
