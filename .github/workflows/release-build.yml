@@ -28,9 +28,18 @@ jobs:
         run: dotnet publish -c Release -r ${{ matrix.os == 'macos-latest' && 'osx-x64' || 'win-x64' }} --self-contained true -o ./publish/wdrop-${{ matrix.os }}
 
       - name: Zip artifact
+        if: matrix.os != 'windows-latest'
         run: |
           cd publish
           zip -r wdrop-${{ matrix.os }}.zip wdrop-${{ matrix.os }}
+
+      - name: Zip artifact
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          $source = "publish/wdrop-${{ matrix.os }}"
+          $dest = "publish/wdrop-${{ matrix.os }}.zip"
+          Compress-Archive -Path $source/* -DestinationPath $dest
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
