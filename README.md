@@ -44,7 +44,11 @@ wdrop myFolder
 
 # If no argument is provided, an interactive menu will appear:
 wdrop
+
+# Set default wdrop external upload provider see [providers](providers.txt)
+wdrop --defaultupload <provierName>
 ```
+[Click to see available providers](providers.txt)
 
 Once started, you'll see an output like:
 
