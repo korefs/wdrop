@@ -31,6 +31,10 @@ A lightweight and fast terminal to **share files or entire folders** with a sing
 
 - 🗃 Upload to 0x0.st (host file server)
 
+- 🔄 P2P direct file transfer between devices
+
+- 📱 QR Code generation for easy mobile access
+
 ---
 
 ## 🚀 Usage
@@ -59,6 +63,27 @@ Waiting for connection... Press Ctrl+C to stop.
 
 Open the link on another device in the same network to download the file.
 
+A QR code will be generated for easy access from mobile devices. Simply scan the QR code with your smartphone's camera to download the file.
+
+### P2P Mode
+
+When using P2P mode, you can directly transfer files between devices:
+
+```bash
+# Set P2P as default upload method
+wdrop --defaultupload p2p
+
+# Share a file using P2P
+wdrop myFile.zip
+```
+
+The P2P mode will provide you with a Peer ID and connection information. You can either:
+1. Wait for someone to connect to you
+2. Connect to another peer by entering their Peer ID, IP address, and port
+
+A QR code containing the connection information will be generated, making it easy to share your connection details with others.
+
+This allows for direct device-to-device file transfers without an intermediary server.
 ---
 
 ## 📥 Installation
@@ -96,10 +121,7 @@ Replace `osx-x64` with your [target runtime identifier](https://learn.microsoft.
 
 - [ ] Support for multiple file selection
 - [ ] HTML listing of available files (server mode)
-- [ ] QR Code generation for easy mobile access
-- [ ] Drag-and-drop GUI version
 - [ ] Receive mode (accept files)
-- [ ] Create a client to support P2P connection
 - [ ] Encryption and password protection
 - [ ] Direct folder serving without zipping (advanced)
 - [ ] External network support via tunneling (e.g. ngrok, Cloudflare Tunnel)

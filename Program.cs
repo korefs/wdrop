@@ -1,8 +1,7 @@
-﻿using System.Net;
-using System.Net.Sockets;
-using System.Text.Json;
+using System.Text;
 using Sharprompt;
 using Wdrop;
+using Wdrop.Connections;
 
 Console.WriteLine(@"
  _    _     _                 
@@ -13,7 +12,7 @@ Console.WriteLine(@"
  \/  \/ \__,_|_|  \___/| .__/ 
                        | |    
                        |_|     v0.2
-         🔗  Wdrop - LAN File Sharing
+         ?? Wdrop - LAN File Sharing
 ");
 
 string? pathToShare;
@@ -21,30 +20,45 @@ bool isDirectory = false;
 
 var config = Config.LoadConfig();
 
+string[] uploadOptions = ["local", "0x0.st", "p2p"];
+
 if (args.Length != 0 && args[0] == "--defaultupload")
 {
-    // todo: implement default upload
-
     if (args.Length < 2)
     {
         Console.WriteLine($"Current Default upload destination is '{config["uploadto"]}'");
         return;
     }
 
+    string pickSelectedUpload = args[1];
+
+    if (!uploadOptions.Contains(pickSelectedUpload))
+    {
+        Console.WriteLine($"Unknown destination provided: {pickSelectedUpload}");
+        Console.WriteLine("Available destination providers: ");
+        StringBuilder sb = new();
+        foreach (string s in uploadOptions)
+        {
+            sb.Append($"{s};");
+        }
+        System.Console.WriteLine(sb.ToString());
+        return;
+    }
+
     Config.SetConfig("uploadto", args[1]);
-    Console.WriteLine($"✅ Default upload destination set to '{args[1]}'");
+    Console.WriteLine($"? Default upload destination set to '{args[1]}'");
     return;
 }
 
 if (args.Length == 0)
 {
-    Console.WriteLine("📂 No file was passed as an argument. Selecting via menu...");
+    Console.WriteLine("?? No file was passed as an argument. Selecting via menu...");
 
     string[] items = [.. Directory.GetFiles(Directory.GetCurrentDirectory())];
 
     if (items.Length == 0)
     {
-        Console.WriteLine("❌ No files found in current folder.");
+        Console.WriteLine("? No files found in current folder.");
         return;
     }
 
@@ -75,101 +89,35 @@ if (isDirectory)
 
 if (!File.Exists(pathToShare))
 {
-    Console.WriteLine($"File not found. \n{pathToShare}");
+    Console.WriteLine($"? File not found. \n{pathToShare}");
     return;
 }
 
 string fileName = Path.GetFileName(pathToShare);
 
-string[] uploadOptions = ["local", "0x0.st"];
 
 if (!uploadOptions.Contains(config["uploadto"]))
 {
-    Console.WriteLine($"❌ Invalid upload destination '{config["uploadto"]}'. Using 'local' instead.");
+    Console.WriteLine($"? Invalid upload destination '{config["uploadto"]}'. Using 'local' instead.");
     Config.SetConfig("uploadto", "local");
 }
 
-if (config["uploadto"] == "0x0.st")
+string defaultUpload = config["uploadto"] ?? "local";
+
+UploadFile uploadFile = new(fileName, Path.GetExtension(fileName), pathToShare);
+
+switch (defaultUpload)
 {
-    // max size for 0x0.st is 512mb
-    if (new FileInfo(pathToShare).Length > 512 * 1024 * 1024)
-    {
-        Console.WriteLine("❌ File is too large for 0x0.st. Please use another provider instead.");
-        return;
-    }
-
-    Console.WriteLine("☁️ Uploading to 0x0.st...");
-
-    using var client = new HttpClient();
-    client.DefaultRequestHeaders.UserAgent.ParseAdd("WdropUploader/1.0");
-    using var multipart = new MultipartFormDataContent();
-    using var stream = File.OpenRead(pathToShare);
-    multipart.Add(new StreamContent(stream), "file", fileName);
-
-    var response = await client.PostAsync("https://0x0.st", multipart);
-    string result = await response.Content.ReadAsStringAsync();
-
-    if (response.IsSuccessStatusCode)
-    {
-        Console.WriteLine($"✅ File sent successfully!");
-        Console.WriteLine($"🔗 Link: {result.Trim()}");
-    }
-    else
-    {
-        Console.WriteLine("❌ Failed to upload file.");
-        Console.WriteLine(result);
-    }
-    return;
+    case "0x0.st":
+        await NullPointerUpload.UploadAsync(uploadFile);
+        break;
+    case "p2p":
+        await P2P.StartP2PServer(uploadFile);
+        break;
+    case "local":
+        await Local.UploadLocal(uploadFile);
+        break;
+    default:
+        await Local.UploadLocal(uploadFile);
+        break;
 }
-
-string localIp = GetLocalIPAddress();
-int port = GetAvailablePort();
-string url = $"http://{localIp}:{port}/{fileName}";
-
-Console.WriteLine($"Sharing '{fileName}' to: {url}");
-
-using var listener = new HttpListener();
-listener.Prefixes.Add($"http://+:{port}/");
-listener.Start();
-
-Console.WriteLine("Waiting for connection... Press Ctrl+C to stop.");
-
-while (true)
-{
-    var context = listener.GetContext();
-    if (context.Request.RawUrl == $"/{fileName}")
-    {
-        Console.WriteLine($"Connection from {context.Request.RemoteEndPoint}");
-
-        var response = context.Response;
-        response.ContentType = "application/octet-stream";
-        response.AddHeader("Content-Disposition", $"attachment; filename={fileName}");
-        byte[] buffer = File.ReadAllBytes(pathToShare);
-        response.ContentLength64 = buffer.Length;
-        response.OutputStream.Write(buffer, 0, buffer.Length);
-        response.OutputStream.Close();
-    }
-    else
-    {
-        context.Response.StatusCode = 404;
-        context.Response.Close();
-    }
-}
-
-static int GetAvailablePort()
-{
-    var listener = new TcpListener(IPAddress.Loopback, 0);
-    listener.Start();
-    int port = ((IPEndPoint)listener.LocalEndpoint).Port;
-    listener.Stop();
-    return port;
-}
-
-static string GetLocalIPAddress()
-{
-    using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0);
-    socket.Connect("8.8.8.8", 65530);
-    var endPoint = socket.LocalEndPoint as IPEndPoint;
-    return endPoint?.Address.ToString() ?? "127.0.0.1";
-}
-
