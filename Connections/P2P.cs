@@ -7,7 +7,7 @@ namespace Wdrop.Connections;
 
 public class P2P
 {
-    public static async Task<int> StartP2PServer(UploadFile uploadFile)
+    public static async Task StartP2PServer(UploadFile uploadFile)
     {
         string localIp = Local.GetLocalIPAddress();
         int port = Local.GetAvailablePort();
@@ -67,8 +67,6 @@ public class P2P
         }
 
         await listenTask;
-
-        return (int)decimal.Zero;
     }
 
     static async Task HandleP2PClient(TcpClient client, string filePath, string fileName)
