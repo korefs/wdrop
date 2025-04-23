@@ -13,7 +13,7 @@ public class Local
         int port = Local.GetAvailablePort();
         string url = $"http://{localIp}:{port}/{uploadFile.FileName}";
 
-        Console.WriteLine($"?? Sharing '{uploadFile.FileName}' to: {url}");
+        WConsole.Success($"Sharing '{uploadFile.FileName}' to: {url}");
         
         QRCodeGenerator.GenerateQRCode(url);
 
@@ -21,14 +21,14 @@ public class Local
         listener.Prefixes.Add($"http://+:{port}/");
         listener.Start();
 
-        Console.WriteLine("Waiting for connection... Press Ctrl+C to stop.");
+        WConsole.Info("Waiting for connection... Press Ctrl+C to stop.");
 
         while (true)
         {
             var context = await listener.GetContextAsync();
             if (context.Request.RawUrl == $"/{uploadFile.FileName}")
             {
-                Console.WriteLine($"Connection from {context.Request.RemoteEndPoint}");
+                WConsole.Info($"Connection from {context.Request.RemoteEndPoint}");
 
                 var response = context.Response;
                 response.ContentType = "application/octet-stream";

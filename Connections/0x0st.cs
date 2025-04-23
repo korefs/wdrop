@@ -7,11 +7,11 @@ public class NullPointerUpload
         // max size for 0x0.st is 512mb
         if (new FileInfo(uploadFile.FilePath).Length > 512 * 1024 * 1024)
         {
-            Console.WriteLine("? File is too large for 0x0.st. Please use another provider instead.");
+            WConsole.Error("File is too large for 0x0.st. Please use another provider instead.");
             return;
         }
 
-        Console.WriteLine("☁️ Uploading to 0x0.st...");
+        WConsole.Info("Uploading to 0x0.st...");
 
         using var client = new HttpClient();
         client.DefaultRequestHeaders.UserAgent.ParseAdd("WdropUploader/1.0");
@@ -25,16 +25,16 @@ public class NullPointerUpload
         if (response.IsSuccessStatusCode)
         {
             string link = result.Trim();
-            Console.WriteLine($"✅ File sent successfully!");
-            Console.WriteLine($"🔗 Link: {link}");
+            WConsole.Success($"File sent successfully!");
             
             // Generate QR code for the link
             QRCodeGenerator.GenerateQRCode(link);
+            WConsole.Info($"Link: {link}");
         }
         else
         {
-            Console.WriteLine("❌ Failed to upload file.");
-            Console.WriteLine(result);
+            WConsole.Error("Failed to upload file.");
+            WConsole.Error(result);
         }
     }
 }
