@@ -5,7 +5,7 @@ namespace Wdrop
 {
     public static class Context
     {
-        public static Dictionary<string, string> Config { get; set; } = new Dictionary<string, string>();
+        public static Dictionary<string, string> Config { get; set; } = new ();
         
         // Use the available strategies from the factory
         public static IEnumerable<string> uploadOptions => UploadStrategyFactory.AvailableStrategies;

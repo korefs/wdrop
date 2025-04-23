@@ -10,11 +10,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        rid: [osx-64, win-x64]
-
-    env:
-      DOTNET_VERSION: '8.0.x'
+        os: [macos-latest, windows-latest]
 
     steps:
       - name: Checkout code
@@ -23,42 +19,21 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-version: '8.x'
 
       - name: Restore dependencies
         run: dotnet restore
-        
-      - name: Set RID for Linux/macOS
-        if: matrix.os != 'windows-latest'
-        shell: bash
-        run: |
-          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
-            echo "RID=linux-x64" >> $GITHUB_ENV
-          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-            arch=$(uname -m)
-            if [[ "$arch" == "arm64" ]]; then
-              echo "RID=osx-arm64" >> $GITHUB_ENV
-            else
-              echo "RID=osx-x64" >> $GITHUB_ENV
-            fi
-          fi
-
-      - name: Set RID for Windows
-        if: matrix.os == 'windows-latest'
-        shell: pwsh
-        run: |
-          echo "RID=win-x64" >> $env:GITHUB_ENV
 
       - name: Build project
-        run: dotnet publish -c Release -r $RID --self-contained true -o ./publish/wdrop-${{ matrix.os }}
+        run: dotnet publish -c Release -r ${{ matrix.os == 'macos-latest' && 'osx-x64' || 'win-x64' }} --self-contained true -o ./publish/wdrop-${{ matrix.os }}
 
-      - name: Zip artifact (Linux/macOS)
+      - name: Zip artifact
         if: matrix.os != 'windows-latest'
         run: |
           cd publish
           zip -r wdrop-${{ matrix.os }}.zip wdrop-${{ matrix.os }}
 
-      - name: Zip artifact (Windows)
+      - name: Zip artifact
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
