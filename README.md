@@ -13,6 +13,8 @@ A lightweight and fast terminal to **share files or entire folders** with a sing
                        |_|
 ```
 
+[![Build and Release](https://github.com/korefs/wdrop/actions/workflows/release-build.yml/badge.svg)](https://github.com/korefs/wdrop/actions/workflows/release-build.yml)
+
 ---
 
 ## ✅ Features
