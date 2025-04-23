@@ -13,13 +13,13 @@ public static class QRCodeGenerator
             AsciiQRCode qrCode = new AsciiQRCode(qrCodeData);
             string qrCodeAsAsciiArt = qrCode.GetGraphicSmall();
             
-            Console.WriteLine("\nScan this QR code with your mobile device:\n");
-            Console.WriteLine(qrCodeAsAsciiArt);
+            WConsole.Info("\nScan this QR code with your mobile device:\n");
+            WConsole.Info(qrCodeAsAsciiArt);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"\nCould not generate QR code: {ex.Message}");
-            Console.WriteLine("Please install the QRCoder package: dotnet add package QRCoder");
+            WConsole.Error($"\nCould not generate QR code: {ex.Message}");
+            WConsole.Error("Please install the QRCoder package: dotnet add package QRCoder");
         }
     }
 }

@@ -1,21 +1,41 @@
+using System.Text;
+
 namespace Wdrop;
 
 public class Config
 {
+    private static Dictionary<string, string> TryCreateInitialConfig()
+    {
+        string configPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".wdropconfig");
+
+        Dictionary<string, string> config = [];
+        config["uploadto"] = "local";
+
+        if (File.Exists(configPath))
+        {
+            return config;
+        }
+
+        StringBuilder initialConfigContentSb = new();
+
+        initialConfigContentSb.Append("# Wdrop configuration file");
+        initialConfigContentSb.AppendLine("# Default upload destination");
+        initialConfigContentSb.AppendLine("uploadto=local");
+
+        File.WriteAllText(configPath, initialConfigContentSb.ToString());
+
+        return config;
+    }
 
     public static Dictionary<string, string> LoadConfig()
     {
         string configPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".wdropconfig");
-        var config = new Dictionary<string, string>();
+        Dictionary<string, string> config = [];
 
         if (!File.Exists(configPath))
         {
-            File.WriteAllText(configPath, "# Wdrop configuration file\n" +
-                "# Default upload destination\n" +
-                "uploadto=local\n");
+            config = TryCreateInitialConfig();
 
-            config["uploadto"] = "local";
-            
             return config;
         }
 
@@ -34,26 +54,33 @@ public class Config
         var lines = new List<string>();
         var found = false;
 
-        if (File.Exists(configPath))
-        {
-            foreach (var line in File.ReadAllLines(configPath))
-            {
-                if (line.StartsWith("#") || !line.Contains("="))
-                {
-                    lines.Add(line);
-                    continue;
-                }
+        TryCreateInitialConfig();
 
-                var parts = line.Split("=", 2);
-                if (parts[0].Trim() == key)
-                {
-                    lines.Add($"{key}={value}");
-                    found = true;
-                }
-                else
-                {
-                    lines.Add(line);
-                }
+        if (!File.Exists(configPath))
+        {
+            return;
+        }
+        
+        foreach (string line in File.ReadAllLines(configPath))
+        {
+            string lineTrimmed = line.Trim();
+
+            if (lineTrimmed.StartsWith("#"))
+            {
+                lines.Add(lineTrimmed);
+                continue;
+            }
+
+            string[] parts = lineTrimmed.Split("=", 2);
+
+            if (parts[0].Trim() == key)
+            {
+                lines.Add($"{key}={value}");
+                found = true;
+            }
+            else
+            {
+                lines.Add(line);
             }
         }
 

@@ -7,24 +7,79 @@ namespace Wdrop.Connections;
 
 public class P2P
 {
+    // Connection info structure
+    private class ConnectionInfo
+    {   
+        public string PeerId { get; set; }
+        public string LocalIp { get; set; }
+        public string PublicIp { get; set; }
+        public int Port { get; set; }
+        public bool HasPublicIp => !string.IsNullOrEmpty(PublicIp);
+        
+        public string GetConnectionString()
+        {
+            // Use public IP if available, otherwise use local IP
+            string ip = HasPublicIp ? PublicIp : LocalIp;
+            return $"P2P:{PeerId}:{ip}:{Port}";
+        }
+    }
     public static async Task StartP2PServer(UploadFile uploadFile)
     {
         string localIp = Local.GetLocalIPAddress();
         int port = Local.GetAvailablePort();
         string peerId = Guid.NewGuid().ToString().Substring(0, 8);
 
-        Console.WriteLine($"Starting P2P server for '{uploadFile.FileName}'...");
-        Console.WriteLine($"Your Peer ID: {peerId}");
+        WConsole.Info($"Starting P2P server for '{uploadFile.FileName}'...");
+        WConsole.Info($"Your Peer ID: {peerId}");
 
+        // Create connection info object
+        var connectionInfo = new ConnectionInfo
+        {
+            PeerId = peerId,
+            LocalIp = localIp,
+            Port = port
+        };
+        
+        // Start TCP listener
         var tcpListener = new TcpListener(IPAddress.Any, port);
         tcpListener.Start();
-
-        Console.WriteLine($"P2P server started on {localIp}:{port}");
         
-        string connectionInfo = $"P2P:{peerId}:{localIp}:{port}";
-        QRCodeGenerator.GenerateQRCode(connectionInfo);
+        WConsole.Info($"P2P server started on local address {localIp}:{port}");
         
-        Console.WriteLine("\nWaiting for peer connections... Press Ctrl+C to stop.");
+        // Try to discover public IP and port using STUN
+        try
+        {
+            WConsole.Info("Discovering public IP address and port...");
+            var publicEndpoint = await StunClient.DiscoverPublicEndpoint(port);
+            
+            if (publicEndpoint != null)
+            {
+                connectionInfo.PublicIp = publicEndpoint.Address.ToString();
+                WConsole.Success($"Public IP address discovered: {connectionInfo.PublicIp}");
+                WConsole.Info("Note: For P2P connections across different networks, you may need to configure port forwarding on your router.");
+            }
+        }
+        catch (Exception ex)
+        {
+            WConsole.Warn($"Failed to discover public IP: {ex.Message}");
+            WConsole.Warn("Falling back to local IP address only.");
+        }
+        
+        // Generate connection string and QR code
+        string connectionString = connectionInfo.GetConnectionString();
+        QRCodeGenerator.GenerateQRCode(connectionString);
+        
+        if (connectionInfo.HasPublicIp)
+        {
+            WConsole.Info($"Share this connection info with your peer: {connectionString}");
+        }
+        else
+        {
+            WConsole.Warn("No public IP address discovered. P2P will only work on the same local network.");
+            WConsole.Warn("For connections across different networks, you'll need to use port forwarding or a relay server.");
+        }
+        
+        WConsole.Info("\nWaiting for peer connections... Press Ctrl+C to stop.");
 
         var listenTask = Task.Run(async () =>
         {
@@ -33,20 +88,20 @@ public class P2P
                 try
                 {
                     var client = await tcpListener.AcceptTcpClientAsync();
-                    Console.WriteLine($"Peer connected from {((IPEndPoint)client.Client.RemoteEndPoint).Address}");
+                    WConsole.Info($"Peer connected from {((IPEndPoint)client.Client.RemoteEndPoint).Address}");
 
                     _ = Task.Run(() => HandleP2PClient(client, uploadFile.FilePath, uploadFile.FileName));
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error accepting connection: {ex.Message}");
+                    WConsole.Info($"Error accepting connection: {ex.Message}");
                 }
             }
         });
 
-        Console.WriteLine("\nOptions:");
-        Console.WriteLine("1. Wait for someone to connect to you");
-        Console.WriteLine("2. Connect to another peer");
+        WConsole.Info("\nOptions:");
+        WConsole.Info("1. Wait for someone to connect to you");
+        WConsole.Info("2. Connect to another peer");
 
         string choice = Prompt.Select("What would you like to do?", new[] { "Wait", "Connect to peer" });
 
@@ -58,11 +113,38 @@ public class P2P
 
             if (int.TryParse(remotePortStr, out int remotePort))
             {
-                await ConnectToP2PPeer(remoteIp, remotePort, uploadFile.FilePath, uploadFile.FileName);
+                try
+                {
+                    WConsole.Info($"Attempting to connect to peer at {remoteIp}:{remotePort}...");
+                    
+                    // Try to resolve hostname if it's not an IP address
+                    IPAddress ipAddress;
+                    if (!IPAddress.TryParse(remoteIp, out ipAddress))
+                    {
+                        WConsole.Info($"Resolving hostname {remoteIp}...");
+                        var addresses = await Dns.GetHostAddressesAsync(remoteIp);
+                        if (addresses.Length > 0)
+                        {
+                            ipAddress = addresses[0];
+                            WConsole.Info($"Resolved to IP address: {ipAddress}");
+                        }
+                        else
+                        {
+                            WConsole.Error($"Could not resolve hostname {remoteIp}");
+                            return;
+                        }
+                    }
+                    
+                    await ConnectToP2PPeer(ipAddress.ToString(), remotePort, uploadFile.FilePath, uploadFile.FileName);
+                }
+                catch (Exception ex)
+                {
+                    WConsole.Error($"Error connecting to peer: {ex.Message}");
+                }
             }
             else
             {
-                Console.WriteLine("Invalid port number.");
+                WConsole.Error("Invalid port number.");
             }
         }
 
@@ -93,7 +175,7 @@ public class P2P
                 long totalBytesSent = 0;
                 int bytesRead;
 
-                Console.WriteLine($"Starting file transfer of {fileName} ({fileStream.Length} bytes)...");
+                WConsole.Info($"Starting file transfer of {fileName} ({fileStream.Length} bytes)...");
 
                 while ((bytesRead = await fileStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
                 {
@@ -105,25 +187,34 @@ public class P2P
                     Console.Write($"\rProgress: {progress:F2}% ({totalBytesSent}/{fileStream.Length} bytes)    ");
                 }
 
-                Console.WriteLine("\nFile transfer completed successfully!");
+                WConsole.Success("\nFile transfer completed successfully!");
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"\nError during file transfer: {ex.Message}");
+            WConsole.Error($"\nError during file transfer: {ex.Message}");
         }
     }
 
     static async Task ConnectToP2PPeer(string remoteIp, int remotePort, string filePath, string fileName)
     {
-        Console.WriteLine($"Connecting to peer at {remoteIp}:{remotePort}...");
+        WConsole.Info($"Connecting to peer at {remoteIp}:{remotePort}...");
 
         try
         {
             using var client = new TcpClient();
-            await client.ConnectAsync(remoteIp, remotePort);
-
-            Console.WriteLine("Connected to peer. Waiting to receive file...");
+            
+            // Set connection timeout
+            var connectTask = client.ConnectAsync(remoteIp, remotePort);
+            var timeoutTask = Task.Delay(10000); // 10 seconds timeout
+            
+            if (await Task.WhenAny(connectTask, timeoutTask) == timeoutTask)
+            {
+                throw new TimeoutException("Connection attempt timed out. The peer might be behind a firewall or NAT.");
+            }
+            
+            // Connection successful
+            WConsole.Success("Connected to peer. Waiting to receive file...");
 
             using var stream = client.GetStream();
 
@@ -137,7 +228,7 @@ public class P2P
             string fileInfoJson = System.Text.Encoding.UTF8.GetString(fileInfoBytes);
             var fileInfo = JsonSerializer.Deserialize<P2PFileInfo>(fileInfoJson);
 
-            Console.WriteLine($"Receiving file: {fileInfo.FileName} ({fileInfo.FileSize} bytes)");
+            WConsole.Info($"Receiving file: {fileInfo.FileName} ({fileInfo.FileSize} bytes)");
 
             string downloadDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
             if (!Directory.Exists(downloadDir))
@@ -162,14 +253,20 @@ public class P2P
                 Console.Write($"\rProgress: {progress:F2}% ({totalBytesReceived}/{fileInfo.FileSize} bytes)    ");
             }
 
-            Console.WriteLine("\nFile received successfully!");
-            Console.WriteLine($"Saved to: {savePath}");
+            WConsole.Success("\nFile received successfully!");
+            WConsole.Info($"Saved to: {savePath}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error connecting to peer: {ex.Message}");
+            WConsole.Error($"Error connecting to peer: {ex.Message}");
+            WConsole.Info("Possible reasons for connection failure:");
+            WConsole.Info("1. The peer is behind a NAT/firewall without port forwarding configured");
+            WConsole.Info("2. The IP address or port number is incorrect");
+            WConsole.Info("3. The peer's P2P server is not running");
         }
     }
+
+
 
     class P2PFileInfo
     {
