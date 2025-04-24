@@ -1,6 +1,6 @@
-# 📦 wdrop
+# 📦 $${\color{magenta}wdrop}$$
 
-A lightweight and fast terminal to **share files or entire folders** with a single command.
+A $${\color{orange}lightweight}$$ and fast terminal to $${\color{orange}share \space files \space or \space entire \space folders}$$ with a single command.
 
 ```bash
  _    _     _                 
