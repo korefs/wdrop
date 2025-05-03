@@ -1,5 +1,9 @@
 using System.Net;
 using System.Net.Sockets;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Logging;
 
 namespace Wdrop.Connections;
 
@@ -8,43 +12,52 @@ public class Local
 
     public static async Task UploadLocal(UploadFile uploadFile)
     {
-
         string localIp = Local.GetLocalIPAddress();
         int port = Local.GetAvailablePort();
-        string url = $"http://{localIp}:{port}/{uploadFile.FileName}";
+        string[] args = [];
 
-        WConsole.Success($"Sharing '{uploadFile.FileName}' to: {url}");
-        
+        var builder = WebApplication.CreateBuilder(args);
+        builder.Logging.ClearProviders();
+        var app = builder.Build();
+
+        string rootPathFromFilePath = Path.GetDirectoryName(uploadFile.FilePath);
+
+        WConsole.Info($"Root path from file path: {rootPathFromFilePath}");
+
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            FileProvider = new PhysicalFileProvider(rootPathFromFilePath),
+            RequestPath = ""
+        });
+
+        string url = $"http://{localIp}:{port}/download/{uploadFile.FileName}";
+
+        app.MapGet("download/{filename}", (string? filename) =>
+        {
+            if (string.IsNullOrEmpty(filename))
+            {
+                filename = uploadFile.FileName;
+            }
+
+            var path = Path.Combine(rootPathFromFilePath, filename);
+
+            if (!System.IO.File.Exists(path))
+                return Results.NotFound("Arquivo não encontrado");
+
+            var contentType = "application/octet-stream";
+            return Results.File(path, contentType, fileDownloadName: filename);
+        });
+
+
+        var serverTask = app.RunAsync($"http://{localIp}:{port}");
+
         QRCodeGenerator.GenerateQRCode(url);
 
-        using var listener = new HttpListener();
-        listener.Prefixes.Add($"http://+:{port}/");
-        listener.Start();
+        WConsole.Success($"Sharing '{uploadFile.FileName}' to: {url}");
+        WConsole.Info("Waiting for connection... Press any key to stop.");
+        Console.ReadKey();
 
-        WConsole.Info("Waiting for connection... Press Ctrl+C to stop.");
-
-        while (true)
-        {
-            var context = await listener.GetContextAsync();
-            if (context.Request.RawUrl == $"/{uploadFile.FileName}")
-            {
-                WConsole.Info($"Connection from {context.Request.RemoteEndPoint}");
-
-                var response = context.Response;
-                response.ContentType = "application/octet-stream";
-                response.AddHeader("Content-Disposition", $"attachment; filename={uploadFile.FileName}");
-                byte[] buffer = File.ReadAllBytes(uploadFile.FilePath);
-                response.ContentLength64 = buffer.Length;
-                response.OutputStream.Write(buffer, 0, buffer.Length);
-                response.OutputStream.Close();
-            }
-            else
-            {
-                context.Response.StatusCode = 404;
-                context.Response.Close();
-            }
-        }
-
+        await app.StopAsync();
     }
 
     public static int GetAvailablePort()
