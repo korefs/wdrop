@@ -48,13 +48,22 @@ public class Local
             return Results.File(path, contentType, fileDownloadName: filename);
         });
 
+        app.MapGet("/list", () =>
+        {
+            var files = Directory.GetFiles(rootPathFromFilePath);
+
+            var fileLinks = string.Join("<br>", files.Select(file => $"<a href='/download/{Path.GetFileName(file)}'>{Path.GetFileName(file)}</a>"));
+            return Results.Content($"<h1>Files</h1><div>{fileLinks}</div>", "text/html");
+        });
 
         var serverTask = app.RunAsync($"http://{localIp}:{port}");
+        var filesListUrl = $"http://{localIp}:{port}/list";
 
         QRCodeGenerator.GenerateQRCode(url);
 
         WConsole.Success($"Sharing '{uploadFile.FileName}' to: {url}");
-        WConsole.Info("Waiting for connection... Press any key to stop.");
+        WConsole.Success($"See files list on {filesListUrl}");
+        WConsole.Info("Press any key to close connection.");
         Console.ReadKey();
 
         await app.StopAsync();
